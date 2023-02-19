@@ -10,7 +10,7 @@ data = yf.download('ADANIENT.NS', period='max')
 data = data.sort_index(ascending=True, axis=0)
 
 # Set up the Streamlit app
-st.title('Exploratory Data Analysis for ADANIENT.NS Stock')
+st.title('EDA for ADANIENT.NS')
 st.subheader('Historical Data from yfinance API')
 
 # Display the raw data
