@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-import streamlit as st
 import yfinance as yf
+import streamlit as st
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 
@@ -9,8 +9,8 @@ from sklearn.preprocessing import MinMaxScaler
 model = load_model('keras_model.h5')
 scaler = MinMaxScaler(feature_range=(0, 1))
 
-# Load the data
-data = yf.download("ADANIENT.NS", start="2020-01-01", end="2023-02-19")
+# Get the data using the yfinance API
+data = yf.download('ADANIENT.NS', period='max')
 data = data.sort_index(ascending=True, axis=0)
 
 # Create a new dataframe with only the 'Close' column
@@ -60,13 +60,9 @@ while(i<n_days):
 predictions = scaler.inverse_transform(np.array(lst_output).reshape(-1, 1))
 
 # Set up the Streamlit app
-st.title('ADANIENT.NS Stock Price Prediction using LSTM')
+st.title('ADANIENT.NS Stock Price Prediction using LSTM and yfinance API')
 st.subheader('Predicted Stock Price for the next {} days'.format(n_days))
 st.line_chart(predictions)
 
-st.subheader('Actual vs. Predicted Stock Price')
+st.subheader('Actual Stock Price for the last {} days'.format(n_days))
 st.line_chart(data['Close'][-n_days:])
-st.line_chart(predictions)
-
-st.subheader('Data for the last {} days'.format(n_days))
-st.write(data.tail(n_days))
