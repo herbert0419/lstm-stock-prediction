@@ -1,68 +1,48 @@
-import numpy as np
-import pandas as pd
 import yfinance as yf
 import streamlit as st
-from tensorflow.keras.models import load_model
-from sklearn.preprocessing import MinMaxScaler
-
-# Load the pre-trained LSTM model and scaler
-model = load_model('keras_model.h5')
-scaler = MinMaxScaler(feature_range=(0, 1))
+import pandas as pd
+import numpy as np
+import plotly.graph_objs as go
+import plotly.express as px
 
 # Get the data using the yfinance API
 data = yf.download('ADANIENT.NS', period='max')
 data = data.sort_index(ascending=True, axis=0)
 
-# Create a new dataframe with only the 'Close' column
-new_data = pd.DataFrame(index=range(0,len(data)),columns=['Close'])
-for i in range(0,len(data)):
-    new_data['Close'][i] = data['Close'][i]
-
-# Normalize the data using the scaler
-scaled_data = scaler.fit_transform(np.array(new_data).reshape(-1,1))
-
-# Define the function to create the dataset
-def create_dataset(dataset, time_step=1):
-    X_data, y_data = [], []
-    for i in range(len(dataset)-time_step-1):
-        a = dataset[i:(i+time_step), 0]
-        X_data.append(a)
-        y_data.append(dataset[i + time_step, 0])
-    return np.array(X_data), np.array(y_data)
-
-# Set the time step for the dataset
-time_step = 100
-
-# Create the X dataset
-x_input = scaled_data[len(scaled_data)-time_step:].reshape(1,-1)
-temp_input = list(x_input)
-temp_input = temp_input[0].tolist()
-
-# Define the number of days to predict
-n_days = 7
-
-# Make the predictions
-lst_output=[]
-n_steps=time_step
-i=0
-while(i<n_days):
-    if(len(temp_input)>time_step):
-        x_input=np.array(temp_input[1:])
-        x_input=x_input.reshape(1,-1)
-        x_input = x_input.reshape((1, n_steps, 1))
-        yhat = model.predict(x_input, verbose=0)
-        temp_input.append(yhat[0][0])
-        temp_input=temp_input[1:]
-        lst_output.append(yhat[0][0])
-        i+=1
-
-# Inverse transform the predictions to get the actual values
-predictions = scaler.inverse_transform(np.array(lst_output).reshape(-1, 1))
-
 # Set up the Streamlit app
-st.title('ADANIENT.NS Stock Price Prediction using LSTM and yfinance API')
-st.subheader('Predicted Stock Price for the next {} days'.format(n_days))
-st.line_chart(predictions)
+st.title('Exploratory Data Analysis for ADANIENT.NS Stock')
+st.subheader('Historical Data from yfinance API')
 
-st.subheader('Actual Stock Price for the last {} days'.format(n_days))
-st.line_chart(data['Close'][-n_days:])
+# Display the raw data
+st.subheader('Raw Data')
+st.write(data.tail())
+
+# Create a line chart of the stock prices
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=data.index, y=data['Close'], name='Close Price'))
+fig.layout.update(title='Historical Close Price', xaxis_title='Date', yaxis_title='Price (INR)')
+st.plotly_chart(fig)
+
+# Calculate and display the percentage change in the stock prices
+st.subheader('Percentage Change')
+change = data['Close'].pct_change()
+fig2 = go.Figure()
+fig2.add_trace(go.Scatter(x=change.index, y=change, name='Percentage Change'))
+fig2.layout.update(title='Daily Percentage Change', xaxis_title='Date', yaxis_title='Percentage Change')
+st.plotly_chart(fig2)
+
+# Display a histogram of the daily percentage change
+st.subheader('Histogram of Percentage Change')
+fig3 = px.histogram(change, x='Close')
+st.plotly_chart(fig3)
+
+# Calculate and display the rolling mean and standard deviation of the stock prices
+st.subheader('Rolling Statistics')
+rolling_mean = data['Close'].rolling(window=20).mean()
+rolling_std = data['Close'].rolling(window=20).std()
+fig4 = go.Figure()
+fig4.add_trace(go.Scatter(x=data.index, y=data['Close'], name='Close Price'))
+fig4.add_trace(go.Scatter(x=rolling_mean.index, y=rolling_mean, name='Rolling Mean'))
+fig4.add_trace(go.Scatter(x=rolling_std.index, y=rolling_std, name='Rolling Std'))
+fig4.layout.update(title='Rolling Mean and Standard Deviation', xaxis_title='Date', yaxis_title='Price (INR)')
+st.plotly_chart(fig4)
