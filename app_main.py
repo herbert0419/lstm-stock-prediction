@@ -6,7 +6,7 @@ from tensorflow.keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 
 # Load the pre-trained LSTM model and scaler
-model = load_model('adani_model.h5')
+model = load_model('keras_model.h5')
 scaler = MinMaxScaler(feature_range=(0, 1))
 
 # Get the data using the yfinance API
